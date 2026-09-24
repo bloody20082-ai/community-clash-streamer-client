@@ -10,7 +10,7 @@ Before applying:
 - [x] Code signing policy documented
 - [x] LiveKit dependency/version documented
 - [x] LiveKit SDK release archive pinned and SHA-256 checked in CI
-- [ ] GitHub Actions public build succeeds
+- [x] GitHub Actions public build succeeds
 - [ ] GitHub account MFA/2FA enabled for maintainers and signing approvers
 - [ ] Project has a normal public release/tag
 - [ ] SignPath Foundation application submitted
