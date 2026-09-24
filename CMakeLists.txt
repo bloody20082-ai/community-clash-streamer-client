@@ -42,6 +42,7 @@ target_link_libraries(CommunityClashStreamer PRIVATE
   mmdevapi
   dwmapi
   comctl32
+  gdiplus
   windowsapp
 )
 
