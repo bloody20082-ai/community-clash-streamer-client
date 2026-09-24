@@ -1,31 +1,44 @@
-name: Bootstrap cleaned source
+name: Restore exact V3.4 sources
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - ".github/workflows/bootstrap-source.yml"
+      - "bootstrap/main.cpp.gz.b64"
+      - "bootstrap/desktop_capture.cpp.gz.b64"
 
 permissions:
   contents: write
 
 jobs:
-  import:
+  restore:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Restore prepared V3.4 source snapshot
+
+      - name: Restore exact V3.4 C++ files
+        shell: bash
         run: |
-          cat bootstrap/source.part00.b64 \
-              bootstrap/source.part00tail.b64 \
-              bootstrap/source.part01.b64 \
-              bootstrap/source.part02.b64 | base64 -d > source.zip
-          unzip -oq source.zip
-          rm source.zip
-      - name: Commit cleaned source
+          set -euo pipefail
+          mkdir -p src
+          base64 -d bootstrap/main.cpp.gz.b64 | gzip -d > src/main.cpp
+          base64 -d bootstrap/desktop_capture.cpp.gz.b64 | gzip -d > src/desktop_capture.cpp
+
+          test "$(wc -c < src/main.cpp)" -eq 38247
+          test "$(wc -c < src/desktop_capture.cpp)" -eq 11313
+
+      - name: Commit restored sources
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add CMakeLists.txt cmake src
-          git commit -m "Import exact V3.4 source snapshot" || exit 0
+          git add src/main.cpp src/desktop_capture.cpp
+          if git diff --cached --quiet; then
+            echo "Exact source files are already committed."
+            exit 0
+          fi
+          git commit -m "Restore exact V3.4 C++ sources"
           git push
