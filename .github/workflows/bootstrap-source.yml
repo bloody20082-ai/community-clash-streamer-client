@@ -14,15 +14,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download prepared V3.4 source snapshot
+      - name: Restore prepared V3.4 source snapshot
         run: |
-          curl -fL 'https://sdmntprindiasocentral.oaiusercontent.com/files/00000000-6a78-8211-81cd-9888a19fcba1/raw?se=2026-09-24T18%3A52%3A11Z&sp=r&sv=2026-02-06&sr=b&scid=8c86f1d8-eb7c-5e79-97ce-c891ee1bdde5&skoid=56822d8b-6cfd-42ed-a00d-1452dca42036&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-24T18%3A44%3A40Z&ske=2026-09-25T18%3A44%3A40Z&sks=b&skv=2026-02-06&sig=V9vbbeuHS6DdM0ORcSYdVvfGClu431ksL8zJeuY15ls%3D' -o source.zip
-          unzip -q source.zip
+          cat bootstrap/source.part00.b64 \
+              bootstrap/source.part00tail.b64 \
+              bootstrap/source.part01.b64 \
+              bootstrap/source.part02.b64 | base64 -d > source.zip
+          unzip -oq source.zip
           rm source.zip
       - name: Commit cleaned source
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add CMakeLists.txt cmake src
-          git commit -m "Import cleaned V3.4 source" || exit 0
+          git commit -m "Import exact V3.4 source snapshot" || exit 0
           git push
