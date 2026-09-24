@@ -1,0 +1,162 @@
+name: Build Windows x64
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "CMakeLists.txt"
+      - ".github/workflows/build.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "CMakeLists.txt"
+      - ".github/workflows/build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add Community Clash icon asset
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Path "assets" -Force | Out-Null
+          $logo = "assets/community-clash-logo.png"
+          Invoke-WebRequest -Uri "https://community-clash.de/assets/community-clash-logo.png" -OutFile $logo -UseBasicParsing
+
+          $expectedLogoHash = "9c4f349cbd054ad4854692dc47ba56a252d077ed72c5432b789644c97073c845"
+          $actualLogoHash = (Get-FileHash -LiteralPath $logo -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualLogoHash -ne $expectedLogoHash) {
+            Remove-Item -LiteralPath $logo -Force -ErrorAction SilentlyContinue
+            throw "Community Clash logo SHA-256 mismatch."
+          }
+
+          Add-Type -AssemblyName System.Drawing
+          $source = [System.Drawing.Image]::FromFile((Join-Path $PWD $logo))
+          try {
+            $sizes = @(16, 24, 32, 48, 64, 128, 256)
+            $images = @()
+            foreach ($size in $sizes) {
+              $bmp = New-Object System.Drawing.Bitmap $size, $size
+              $g = [System.Drawing.Graphics]::FromImage($bmp)
+              try {
+                $g.Clear([System.Drawing.Color]::Transparent)
+                $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+                $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+                $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+                $g.DrawImage($source, 0, 0, $size, $size)
+              } finally {
+                $g.Dispose()
+              }
+              $ms = New-Object IO.MemoryStream
+              $bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png)
+              $bmp.Dispose()
+              $images += ,$ms.ToArray()
+              $ms.Dispose()
+            }
+
+            $icoPath = Join-Path $PWD "assets/community-clash.ico"
+            $fs = [IO.File]::Create($icoPath)
+            $bw = New-Object IO.BinaryWriter $fs
+            try {
+              $bw.Write([UInt16]0)
+              $bw.Write([UInt16]1)
+              $bw.Write([UInt16]$images.Count)
+              $offset = 6 + (16 * $images.Count)
+              for ($i = 0; $i -lt $images.Count; $i++) {
+                $size = $sizes[$i]
+                $dim = if ($size -eq 256) { 0 } else { $size }
+                $bw.Write([Byte]$dim)
+                $bw.Write([Byte]$dim)
+                $bw.Write([Byte]0)
+                $bw.Write([Byte]0)
+                $bw.Write([UInt16]1)
+                $bw.Write([UInt16]32)
+                $bw.Write([UInt32]$images[$i].Length)
+                $bw.Write([UInt32]$offset)
+                $offset += $images[$i].Length
+              }
+              foreach ($bytes in $images) { $bw.Write($bytes) }
+            } finally {
+              $bw.Dispose()
+              $fs.Dispose()
+            }
+          } finally {
+            $source.Dispose()
+          }
+
+      - name: Download and verify LiveKit SDK 1.11.0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $version = "1.11.0"
+          $archive = "livekit-sdk-windows-x64-$version.zip"
+          $url = "https://github.com/livekit/client-sdk-cpp/releases/download/v$version/$archive"
+          $expected = "d95d677c3ca7348e0af18ede713f7fe825c14a726296ff65524b933f64f965dc"
+
+          Invoke-WebRequest -Uri $url -OutFile $archive -UseBasicParsing
+          $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) {
+            Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
+            throw "LiveKit SDK SHA-256 mismatch."
+          }
+
+          New-Item -ItemType Directory -Path livekit-sdk -Force | Out-Null
+          Expand-Archive -LiteralPath $archive -DestinationPath livekit-sdk -Force
+          $config = Get-ChildItem livekit-sdk -Recurse -Filter LiveKitConfig.cmake | Select-Object -First 1
+          if (-not $config) { throw "LiveKitConfig.cmake not found." }
+          $sdkRoot = Split-Path (Split-Path (Split-Path $config.DirectoryName -Parent) -Parent) -Parent
+          "CC_LIVEKIT_SDK_DIR=$sdkRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Configure
+        shell: pwsh
+        run: cmake -S . -B out -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="$env:CC_LIVEKIT_SDK_DIR"
+
+      - name: Build Release
+        shell: pwsh
+        run: cmake --build out --config Release --parallel
+
+      - name: Create unsigned portable package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $portable = Join-Path $PWD "portable/CommunityClashStreamer"
+          New-Item -ItemType Directory -Path $portable -Force | Out-Null
+
+          $exe = Get-ChildItem out -Recurse -Filter CommunityClashStreamer.exe | Select-Object -First 1
+          if (-not $exe) { throw "CommunityClashStreamer.exe not found." }
+          Copy-Item $exe.FullName $portable -Force
+
+          Get-ChildItem out -Recurse -Filter "*.dll" |
+            Sort-Object FullName -Unique |
+            ForEach-Object { Copy-Item $_.FullName $portable -Force }
+
+          Get-ChildItem livekit-sdk -Recurse -Filter "*.dll" |
+            Where-Object { $_.Name -match "^livekit(_ffi)?\.dll$" } |
+            Sort-Object Name -Unique |
+            ForEach-Object { Copy-Item $_.FullName $portable -Force }
+
+          if (-not (Test-Path (Join-Path $portable "livekit_ffi.dll"))) {
+            throw "livekit_ffi.dll is missing from the portable package."
+          }
+
+          Compress-Archive -Path $portable -DestinationPath CommunityClashStreamer-unsigned.zip -Force
+
+      - name: Upload unsigned artifact
+        id: upload_unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: CommunityClashStreamer-unsigned
+          path: CommunityClashStreamer-unsigned.zip
+          if-no-files-found: error
+          retention-days: 30
