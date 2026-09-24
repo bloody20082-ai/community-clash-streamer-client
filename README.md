@@ -15,6 +15,12 @@ The client is intentionally limited to capturing the World of Warcraft game wind
 - clean LiveKit disconnect when the client exits
 - LiveKit C++ SDK pinned to 1.11.0 with SHA-256 verification in CI
 
+## Releases
+
+The current public release is **v3.4.0**. It is currently unsigned while the project applies for free code signing through SignPath Foundation.
+
+Download: https://github.com/bloody20082-ai/community-clash-streamer-client/releases/tag/v3.4.0
+
 ## Build
 
 Requirements:
