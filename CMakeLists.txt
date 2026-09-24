@@ -8,6 +8,10 @@ endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(LiveKitSDK)
+cc_livekit_sdk_setup()
+
 find_package(LiveKit CONFIG REQUIRED)
 
 add_executable(CommunityClashStreamer WIN32
