@@ -1,0 +1,28 @@
+name: Bootstrap cleaned source
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bootstrap-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download prepared V3.4 source snapshot
+        run: |
+          curl -fL 'https://sdmntprnortheu.oaiusercontent.com/files/00000000-1c20-81f4-8747-8d83d3717d5e/raw?se=2026-09-24T18%3A37%3A44Z&sp=r&sv=2026-02-06&sr=b&scid=76e80f55-759a-5262-be79-0a050bd0f1d4&skoid=56822d8b-6cfd-42ed-a00d-1452dca42036&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-24T18%3A26%3A31Z&ske=2026-09-25T18%3A26%3A31Z&sks=b&skv=2026-02-06&sig=UP8hs3AKgud8e3TJK4HEUW95SWRKSAJ5qThdi0ET5r8%3D' -o source.zip
+          unzip -q source.zip
+          rm source.zip
+      - name: Commit cleaned source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CMakeLists.txt cmake src
+          git commit -m "Import cleaned V3.4 source" || exit 0
+          git push
