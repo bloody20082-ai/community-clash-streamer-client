@@ -1,0 +1,36 @@
+#include <windows.h>
+
+#define IDR_MAINICON 101
+IDR_MAINICON ICON "..\\assets\\community-clash.ico"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 3,4,0,0
+ PRODUCTVERSION 3,4,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040704B0"
+        BEGIN
+            VALUE "CompanyName", "Community Clash\0"
+            VALUE "FileDescription", "Community Clash Streamer Client\0"
+            VALUE "FileVersion", "3.4.0\0"
+            VALUE "InternalName", "CommunityClashStreamer\0"
+            VALUE "OriginalFilename", "CommunityClashStreamer.exe\0"
+            VALUE "ProductName", "Community Clash Streamer\0"
+            VALUE "ProductVersion", "3.4.0\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x407, 1200
+    END
+END
