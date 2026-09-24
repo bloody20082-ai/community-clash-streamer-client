@@ -12,7 +12,7 @@ Before applying:
 - [x] LiveKit SDK release archive pinned and SHA-256 checked in CI
 - [x] GitHub Actions public build succeeds
 - [ ] GitHub account MFA/2FA enabled for maintainers and signing approvers
-- [ ] Project has a normal public release/tag
+- [x] Project has a normal public release/tag
 - [ ] SignPath Foundation application submitted
 - [ ] SignPath project, artifact configuration and signing policy created
 - [ ] SignPath GitHub integration configured
