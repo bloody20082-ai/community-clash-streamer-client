@@ -1,0 +1,10 @@
+out/
+build/
+portable/
+livekit-sdk/
+*.zip
+*.pdb
+*.obj
+*.user
+.vs/
+.idea/
