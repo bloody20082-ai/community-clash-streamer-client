@@ -600,7 +600,7 @@ void begin_stream() {
       videoOptions.simulcast = false;
       videoOptions.video_codec = livekit::VideoCodec::H264;
       videoOptions.video_encoding = livekit::VideoEncodingOptions{16'000'000, 60.0};
-      videoOptions.degradation_preference = livekit::DegradationPreference::MaintainResolution;
+      videoOptions.degradation_preference = livekit::DegradationPreference::MaintainFramerate;
       prefer_hardware_encoder(videoOptions);
       participant->publishTrack(videoTrack, videoOptions);
 
