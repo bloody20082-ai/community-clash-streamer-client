@@ -17,9 +17,11 @@ The client is intentionally limited to capturing the World of Warcraft game wind
 
 ## Releases
 
-The current public release is **v3.4.0**. It is currently unsigned while the project applies for free code signing through SignPath Foundation.
+The current public release is **v3.4.0**. The current Windows release is **unsigned**. The project publishes the source code, build workflow and SHA-256 checksums so release artifacts can be independently verified.
 
-Download: https://github.com/bloody20082-ai/community-clash-streamer-client/releases/tag/v3.4.0
+Official release: https://github.com/bloody20082-ai/community-clash-streamer-client/releases/tag/v3.4.0
+
+The project is evaluating future code-signing and distribution options.
 
 ## Build
 
