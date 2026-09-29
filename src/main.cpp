@@ -599,8 +599,8 @@ void begin_stream() {
       videoOptions.stream = std::string("community-clash-screen");
       videoOptions.simulcast = false;
       videoOptions.video_codec = livekit::VideoCodec::H264;
-      videoOptions.video_encoding = livekit::VideoEncodingOptions{12'000'000, 60.0};
-      videoOptions.degradation_preference = livekit::DegradationPreference::Balanced;
+      videoOptions.video_encoding = livekit::VideoEncodingOptions{16'000'000, 60.0};
+      videoOptions.degradation_preference = livekit::DegradationPreference::MaintainResolution;
       prefer_hardware_encoder(videoOptions);
       participant->publishTrack(videoTrack, videoOptions);
 
