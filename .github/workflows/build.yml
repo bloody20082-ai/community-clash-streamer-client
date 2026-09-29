@@ -8,12 +8,14 @@ on:
       - "src/**"
       - "CMakeLists.txt"
       - "cmake/**"
+      - "packaging/msix/**"
       - ".github/workflows/build.yml"
   pull_request:
     paths:
       - "src/**"
       - "CMakeLists.txt"
       - "cmake/**"
+      - "packaging/msix/**"
       - ".github/workflows/build.yml"
 
 permissions:
@@ -153,6 +155,31 @@ jobs:
           }
 
           Compress-Archive -Path $portable -DestinationPath CommunityClashStreamer-unsigned.zip -Force
+
+      - name: Build MSIX package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $identityConfig = "packaging/msix/store-identity.json"
+          $args = @{
+            PortableDir = "portable/CommunityClashStreamer"
+            LogoPath = "assets/community-clash-logo.png"
+            OutputDir = "store-package"
+          }
+          if (Test-Path -LiteralPath $identityConfig) {
+            $args.IdentityConfigPath = $identityConfig
+          }
+          & "packaging/msix/build-store-msix.ps1" @args
+
+      - name: Upload MSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CC_MSIX_ARTIFACT_NAME }}
+          path: |
+            store-package/*.msix
+            store-package/msix-build-info.json
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Upload unsigned artifact
         id: upload_unsigned
